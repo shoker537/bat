@@ -140,6 +140,7 @@ public class TablistService {
     public void handleServerConnection(final @NonNull Player player) {
         this.defaultTablist.removePlayer(player);
         this.defaultTablist.addPlayer(player);
+        updateText(player);
     }
 
 
