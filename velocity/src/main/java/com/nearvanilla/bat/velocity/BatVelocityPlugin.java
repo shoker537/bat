@@ -49,6 +49,10 @@ public class BatVelocityPlugin {
         this.injector = injector;
     }
 
+    public ProxyServer proxy() {
+        return server;
+    }
+
     @Subscribe
     public void onProxyInitialization(final @NonNull ProxyInitializeEvent event) {
         this.enable();

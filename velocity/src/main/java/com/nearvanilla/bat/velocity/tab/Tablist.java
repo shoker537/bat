@@ -1,9 +1,12 @@
 package com.nearvanilla.bat.velocity.tab;
 
 import com.velocitypowered.api.proxy.Player;
+import com.velocitypowered.api.proxy.ServerConnection;
 import com.velocitypowered.api.proxy.player.TabList;
 import com.velocitypowered.api.proxy.player.TabListEntry;
+import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.util.GameProfile;
+import net.kyori.adventure.text.Component;
 import org.checkerframework.checker.nullness.qual.NonNull;
 
 import java.util.*;
@@ -17,6 +20,7 @@ public class Tablist {
     private final @NonNull List<String> headerFormatStrings;
     private final @NonNull List<String> footerFormatStrings;
     private final @NonNull Collection<GameProfile> profileEntries;
+    private final @NonNull PlayerSetType playerSetType;
 
     /**
      * Constructs {@code Tablist}.
@@ -31,7 +35,9 @@ public class Tablist {
                    final @NonNull TablistService tablistService,
                    final @NonNull ServerDataProvider serverDataProvider,
                    final @NonNull List<String> headerFormatStrings,
-                   final @NonNull List<String> footerFormatStrings) {
+                   final @NonNull List<String> footerFormatStrings,
+                   final @NonNull PlayerSetType playerSetType) {
+        this.playerSetType = playerSetType;
         this.logger = logger;
         this.tablistService = tablistService;
         this.serverDataProvider = serverDataProvider;
@@ -66,22 +72,52 @@ public class Tablist {
      * @param tabList the tablist
      * @return the list of tablist entries
      */
-    public @NonNull List<TabListEntry> entries(final @NonNull TabList tabList) {
+    public @NonNull List<TabListEntry> entries(Player player, final @NonNull TabList tabList) {
         synchronized (profileEntries) {
-            return profileEntries
-                    .stream()
-                    .sorted(Comparator.comparing(GameProfile::getName))
-                    .map(gameProfile ->
-                            TabListEntry.builder()
-                                    .latency(this.tablistService.ping(gameProfile.getId()))
-                                    .tabList(tabList)
-                                    .profile(gameProfile)
-                                    .displayName(this.tablistService.displayName(gameProfile.getId()))
-                                    .gameMode(this.getGameMode(tabList, gameProfile.getId()))
-                                    .build()
-                    ).toList();
+            if(playerSetType==PlayerSetType.SERVER){
+                Optional<ServerConnection> s = player.getCurrentServer();
+                if(s.isEmpty()) return new ArrayList<>();
+                ServerConnection c = s.get();
+                return
+                        c.getServer().getPlayersConnected().stream()
+                        .map(Player::getGameProfile)
+                        .sorted(Comparator.comparing(GameProfile::getName))
+                        .map(gameProfile ->
+                                TabListEntry.builder()
+                                        .latency(this.tablistService.ping(gameProfile.getId()))
+                                        .tabList(tabList)
+                                        .profile(gameProfile)
+                                        .displayName(this.tablistService.displayName(gameProfile.getId()))
+                                        .gameMode(this.getGameMode(tabList, gameProfile.getId()))
+                                        .build()
+                        ).toList();
+            } else {
+                return profileEntries
+                        .stream()
+                        .sorted(Comparator.comparing(GameProfile::getName))
+                        .map(gameProfile ->
+                                TabListEntry.builder()
+                                        .latency(this.tablistService.ping(gameProfile.getId()))
+                                        .tabList(tabList)
+                                        .profile(gameProfile)
+                                        .displayName(this.tablistService.displayName(gameProfile.getId()))
+                                        .gameMode(this.getGameMode(tabList, gameProfile.getId()))
+                                        .build()
+                        ).toList();
+            }
         }
     }
+
+//    private boolean showPlayerFor(Player playerTablistMadeFor, GameProfile playerToShow){
+//        if(playerSetType==PlayerSetType.PROXY) return true;
+//        Optional<ServerConnection> s1 = playerTablistMadeFor.getCurrentServer();
+//        if(s1.isEmpty()) return false;
+//        Optional<Player> target = tablistService.getPlugin().proxy().getPlayer(playerToShow.getId());
+//        if(target.isEmpty()) return false;
+//        Optional<ServerConnection> s2 = target.get().getCurrentServer();
+//        if(s2.isEmpty()) return false;
+//        return s1.get().getServerInfo().equals(s2.get().getServerInfo());
+//    }
 
     public @NonNull List<String> headerFormatStrings() {
         return this.headerFormatStrings;

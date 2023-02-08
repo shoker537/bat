@@ -37,6 +37,8 @@ import java.util.logging.Logger;
  */
 @Singleton
 public class TablistService {
+    private static final char[] alphabet = {'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'};
+    private static final char[] altAlphabet = {'ᴀ','ʙ','ᴄ','ᴅ','ᴇ','ꜰ','ɢ','ʜ','ɪ','ᴊ','ᴋ','ʟ','ᴍ','ɴ','ᴏ','ᴘ','\uA7AF','ʀ','ꜱ','ᴛ','ᴜ','ᴠ','ᴡ','x','ʏ','ᴢ'};
 
     private static final @NonNull SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("hh:mm a");
     private static final @NonNull SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy/MM/dd");
@@ -80,6 +82,21 @@ public class TablistService {
         this.tablistMap = new ConcurrentHashMap<>();
     }
 
+    private char translateToAlt(char c){
+        for (int i = 0; i < alphabet.length; i++) {
+            if(alphabet[i]==c) return altAlphabet[i];
+        }
+        return c;
+    }
+
+    private String translateToAlt(String s){
+        s = s.toLowerCase();
+        StringBuilder b = new StringBuilder();
+        char[] chars = s.toCharArray();
+        for (char aChar : chars) b.append(translateToAlt(aChar));
+        return b.toString();
+    }
+
     /**
      * Enables the tablist service.
      */
@@ -99,7 +116,8 @@ public class TablistService {
             final Tablist tablist = new Tablist(
                     this.logger, this, this.serverDataProvider,
                     tablistConfig.headerFormatStrings,
-                    tablistConfig.footerFormatStrings
+                    tablistConfig.footerFormatStrings,
+                    tablistConfig.playerSetType
             );
             this.tablistMap.put(id, tablist);
         }
@@ -120,6 +138,10 @@ public class TablistService {
                 this.defaultTablist.addPlayer(player);
             }
         }
+    }
+
+    public BatVelocityPlugin getPlugin() {
+        return plugin;
     }
 
     /**
@@ -304,7 +326,7 @@ public class TablistService {
 
             final TabList tabList = player.getTabList();
 
-            final List<TabListEntry> currentEntries = this.defaultTablist.entries(tabList);
+            final List<TabListEntry> currentEntries = this.defaultTablist.entries(player, tabList);
             final List<TabListEntry> entries = new ArrayList<>(tabList.getEntries());
 
             boolean equals = currentEntries.size() == entries.size();
@@ -331,7 +353,7 @@ public class TablistService {
 
             if (!equals) {
                 final TabList newTabList = player.getTabList();
-                final List<TabListEntry> newEntries = this.defaultTablist.entries(newTabList);
+                final List<TabListEntry> newEntries = this.defaultTablist.entries(player, newTabList);
 
                 for (final TabListEntry entry : newTabList.getEntries()) {
                     newTabList.removeEntry(entry.getProfile().getId());

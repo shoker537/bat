@@ -1,5 +1,6 @@
 package com.nearvanilla.bat.velocity.config;
 
+import com.nearvanilla.bat.velocity.tab.PlayerSetType;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 import org.spongepowered.configurate.objectmapping.meta.Comment;
@@ -46,5 +47,11 @@ public class TablistConfig {
             "<gray>\\<<aqua>playerip</aqua>> - </gray><gray><playerip></gray>",
             ""
     );
+
+    @Comment("""
+            Determines the set of players this tablist needs to show.
+            Possible values: PROXY, SERVER
+            """)
+    public PlayerSetType playerSetType = PlayerSetType.PROXY;
 
 }
